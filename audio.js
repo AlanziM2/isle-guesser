@@ -65,6 +65,7 @@ window.Sound = (function () {
 
   const SOUNDS = {
     tap: () => puff({ dur: 0.05, gain: 0.06, from: 3200, q: 2 }),
+    tick: () => pluck(N(C6), { dur: 0.07, gain: 0.05, type: 'sine', cutoff: 3000 }),
     key: () => puff({ dur: 0.03, gain: 0.025, from: 4200 + Math.random() * 800, q: 3 }),
     correct: () => [E5, G5, C6].forEach((n, i) => bell(N(n), i * 0.09, 1, 0.1)),
     streak: () => {

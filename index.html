@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#8cc3dc">
 <title>Isle Guesser</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -92,7 +93,7 @@
       </button>
       <button class="mode timed" data-mode="timed" type="button">
         <span class="mode-ico"><svg viewBox="0 0 48 48" width="44" height="44"><rect x="20" y="3" width="8" height="5" rx="2" fill="#3b3247"/><circle cx="24" cy="27" r="17" fill="#fff" stroke="#3b3247" stroke-width="2.5"/><path d="M24 27V16" stroke="#7b5fd1" stroke-width="3" stroke-linecap="round"/><path d="M24 27l7 5" stroke="#3b3247" stroke-width="2.5" stroke-linecap="round"/><path d="M24 12a15 15 0 0 1 15 15H24z" fill="#c9b8ff" opacity=".55"/><circle cx="24" cy="27" r="2.5" fill="#3b3247"/></svg></span>
-        <span><b>Time Attack</b><em>Name them all as fast as you can.</em><strong id="best"></strong></span>
+        <span><b>Time Attack</b><em>30 seconds per island. Hints cost time.</em><strong id="best"></strong></span>
       </button>
     </div>
   </section>
@@ -121,6 +122,12 @@
   <rect x="18.5" y="23" width="2.6" height="2.4" rx=".5" fill="#ffd36b" stroke="#3b3247" stroke-width="1"/>
   <path d="M7 34.5c1.2-.6 2.4-.6 3.6 0M24 35c1.2-.6 2.4-.6 3.6 0" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/>
 </svg></div>
+    <div id="countdown" class="countdown" hidden aria-label="Time left for this island">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="10" y="1.5" width="4" height="2.6" rx="1" fill="#3b3247"/><circle cx="12" cy="13.5" r="8.5" fill="#fff" stroke="#3b3247" stroke-width="1.8"/><path d="M12 13.5V8.5" stroke="#7b5fd1" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="13.5" r="1.4" fill="#3b3247"/></svg>
+      <div class="cd-track"><i id="cd-bar"></i></div>
+      <b id="cd-num">30s</b>
+      <span id="cd-pen" class="cd-pen"></span>
+    </div>
     <div class="ask-body">
       <button class="flag-card" id="flag-btn" type="button" title="View flag larger"><img id="flag" alt="Flag of the mystery island"><span class="lens" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5M10.5 8v5"/></svg></span></button>
       <div class="ask-main">
@@ -188,7 +195,7 @@
     <img id="lb-img" alt="">
     <figcaption id="lb-cap"></figcaption>
   </figure>
-  <p class="lb-close">Click anywhere or press Esc to close</p>
+  <p class="lb-close">Tap anywhere or press Esc to close</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>

@@ -1,6 +1,9 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const FLY = { classic: 6, timed: 4 };              // seconds of auto-zoom
+  const ROUND_MS = 30000;                              // Time Attack: time per island
+  const HINT_MS = 7000;                                // Time Attack: what a hint costs
+  const MIN_BACK_MS = 8000;                            // a skipped island comes back with at least this
   const POOL_NAMES = { all: 'all islands', nation: 'nations', territory: 'territories' };
   const LAND = ['#f1e7cc', '#ece0c1', '#f4ecd5', '#eee3c7'];   // atlas sand tones
   const BORDER = '#c9b48c';
@@ -166,7 +169,7 @@
   }
   const poolList = () => ISLANDS.filter(i => S.pool === 'all' || i.type === S.pool);
 
-  function show(id) { ['menu', 'ask', 'reveal', 'end'].forEach(p => $(p).hidden = p !== id); }
+  function show(id) { ['menu', 'ask', 'reveal', 'end'].forEach(p => $(p).hidden = p !== id); document.body.dataset.phase = id; }
   function pop(el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
   let toastT;
   function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900); }
@@ -272,7 +275,7 @@
       at: S.started || Date.now(), mode: S.mode, pool: S.pool, finished,
       ms: Math.round(performance.now() - S.startTime), total: S.total,
       correct: S.correct, skipped: S.mode === 'timed' ? S.skips : S.skipped,
-      hints: S.hints, streak: S.bestStreak, score: S.score
+      hints: S.hints, streak: S.bestStreak, score: S.score, missed: S.missed || 0
     });
     store.set(HKEY, JSON.stringify(runs.slice(0, 50)));
   }
@@ -309,6 +312,19 @@
     const hadStreak = S.streak > 0;
     S.streak = 0; hud();
     Sound.play('near');
+    let cost = '';
+    if (S.mode === 'timed') {
+      const now = performance.now();
+      const before = S.roundEnd;
+      S.roundEnd = Math.max(now + 3000, S.roundEnd - HINT_MS);
+      const lost = Math.round((before - S.roundEnd) / 1000);
+      if (lost > 0) {
+        cost = ' −' + lost + ' seconds.';
+        const pen = $('cd-pen'); pen.textContent = '−' + lost + 's'; pop(pen);
+        const cd = $('countdown'); cd.classList.remove('hit'); void cd.offsetWidth; cd.classList.add('hit');
+      }
+      paintCountdown();
+    }
     const li = document.createElement('li');
     li.textContent = clue;
     if (S.clueAt === S.clues.length) li.className = 'pattern';
@@ -316,7 +332,7 @@
     const left = S.clues.length - S.clueAt;
     $('hint-btn').disabled = left === 0;
     $('hint-btn').lastChild.textContent = left ? 'Another hint' : 'No more hints';
-    if (hadStreak) toast('Hint used. Your streak resets.');
+    if (hadStreak || cost) toast('Hint used.' + (hadStreak ? ' Streak reset.' : '') + cost);
     $('answer').focus({ preventScroll: true });
   }
 
@@ -327,11 +343,37 @@
     S.queue = Match.shuffle(poolList());
     S.total = S.queue.length; S.idx = 0;
     S.score = 0; S.streak = 0; S.bestStreak = 0; S.correct = 0; S.skips = 0; S.skipped = 0; S.hints = 0;
+    S.missed = 0; S.leftover = {};
     $('hud').hidden = false;
     $('clock').textContent = '0:00';
     S.startTime = performance.now(); S.started = Date.now();
-    S.clockId = setInterval(() => { $('clock').textContent = fmt(performance.now() - S.startTime); }, 250);
+    S.clockId = setInterval(tick, 100);
     nextRound();
+  }
+
+  // ---------- Time Attack countdown ----------
+  function tick() {
+    const now = performance.now();
+    $('clock').textContent = fmt(now - S.startTime);
+    if (S.mode !== 'timed' || S.phase !== 'guess') return;
+    const left = S.roundEnd - now;
+    paintCountdown();
+    const sec = Math.ceil(left / 1000);
+    if (left > 0 && sec <= 5 && sec !== S.lastBeep) { S.lastBeep = sec; Sound.play('tick'); }
+    if (left <= 0) timeUp();
+  }
+  function paintCountdown() {
+    const left = Math.max(0, S.roundEnd - performance.now());
+    $('cd-bar').style.width = Math.min(100, left / ROUND_MS * 100) + '%';
+    $('cd-num').textContent = Math.ceil(left / 1000) + 's';
+    $('countdown').classList.toggle('low', left < 8000);
+  }
+  function timeUp() {
+    if (S.phase !== 'guess') return;
+    Sound.play('wrong');
+    S.streak = 0; S.skipped++; S.missed++;
+    $('cd-bar').style.width = '0%'; $('cd-num').textContent = '0s';
+    reveal(false, '', 0, 'Time’s up! It was…');
   }
   const currentIsland = () => S.mode === 'timed' ? S.queue[0] : S.queue[S.idx];
 
@@ -354,7 +396,19 @@
     $('flag').src = flagUrl(isl);
     const card = $('flag').parentElement; card.classList.remove('flip'); void card.offsetWidth; card.classList.add('flip');
     const input = $('answer'); input.value = ''; input.className = '';
-    setHint(S.mode === 'timed' ? 'Skipped islands come back at the end.' : '', '');
+    setHint('', '');
+    const timed = S.mode === 'timed';
+    $('countdown').hidden = !timed;
+    if (timed) {
+      const kept = S.leftover[isl.flag];
+      delete S.leftover[isl.flag];
+      S.roundEnd = performance.now() + (kept ? Math.max(MIN_BACK_MS, kept) : ROUND_MS);
+      S.lastBeep = 0;
+      $('countdown').classList.remove('hit');
+      $('cd-pen').textContent = '';
+      paintCountdown();
+    }
+    $('hint-btn').title = timed ? 'Costs your streak and ' + HINT_MS / 1000 + ' seconds' : 'Costs your streak';
     S.clues = Clues.forIsland(isl); S.clueAt = 0;
     $('clues').innerHTML = '';
     $('hint-btn').disabled = false;
@@ -413,18 +467,21 @@
     Sound.play('skip');
     S.streak = 0; S.skips++;
     if (S.mode === 'timed') {
-      if (S.queue.length > 1) { S.queue.push(S.queue.shift()); toast('Skipped. It will come back.'); }
+      if (S.queue.length > 1) {
+        S.leftover[S.current.flag] = S.roundEnd - performance.now();
+        S.queue.push(S.queue.shift()); toast('Skipped. It comes back later with its time left.');
+      }
       nextRound();
     } else { S.skipped++; reveal(false, '', 0); }
   }
 
-  function reveal(ok, fixedNote, gain) {
+  function reveal(ok, fixedNote, gain, missText) {
     S.phase = 'reveal'; S.revealedAt = performance.now();
     clearTimeout(S.flyTimer); S.auto = false;
     const isl = S.current;
     $('autozoom').hidden = true; $('map-tip').hidden = true;
     const v = $('verdict');
-    v.textContent = ok ? (S.streak >= 3 ? 'Correct! You\'re on a roll' : 'Correct!') : 'This one was…';
+    v.textContent = ok ? (S.streak >= 3 ? 'Correct! You\'re on a roll' : 'Correct!') : (missText || 'This one was…');
     v.className = 'tier ' + (ok ? 'ok' : 'miss');
     $('reveal-name').textContent = isl.name;
     $('reveal-flag').src = flagUrl(isl);
@@ -459,13 +516,16 @@
     $('end-tag').textContent = (S.mode === 'timed' ? 'Time Attack · ' : 'Classic · ') + POOL_NAMES[S.pool];
     if (S.mode === 'timed') {
       const ms = performance.now() - S.startTime;
-      const prev = getBest(), record = !prev || ms < prev;
+      // Only a clean run (no island's clock ran out) can set a record.
+      const prev = getBest(), record = !S.missed && (!prev || ms < prev);
       if (record) store.set(bestKey(), String(Math.round(ms)));
       $('clock').textContent = fmt(ms);
-      $('end-title').textContent = record ? 'New record!' : 'Every island found!';
+      $('end-title').textContent = S.missed ? S.correct + ' of ' + S.total + ' named' : record ? 'New record!' : 'Every island found!';
       $('end-tiles').innerHTML = tile(fmt(ms, true), 'your time', record) +
-        tile(fmt(record ? ms : prev, true), 'best time') + tile(S.skips, 'skips') + tile(S.bestStreak, 'longest streak');
-      $('end-text').textContent = record && prev ? 'You beat your old best by ' + fmt(prev - ms, true) + '.' :
+        tile(prev || record ? fmt(record ? ms : prev, true) : '–', 'best time') + tile(S.missed, 'ran out of time') +
+        tile(S.skips, 'skips') + tile(S.bestStreak, 'longest streak');
+      $('end-text').textContent = S.missed ? 'Name every island before its clock runs out to set a record.' :
+        record && prev ? 'You beat your old best by ' + fmt(prev - ms, true) + '.' :
         prev && !record ? fmt(ms - prev, true) + ' off your best. One more go?' : 'Now try to beat it.';
     } else {
       const pct = Math.round(S.correct / S.total * 100);
@@ -576,6 +636,14 @@
     if (e.key === 'Enter' && S.phase === 'reveal' && performance.now() - S.revealedAt > 350) { e.preventDefault(); advance(); }
   });
   window.addEventListener('resize', () => { if (S.phase === 'menu' || S.phase === 'end') worldView(); });
-
+  // Phones: lift the card above the on-screen keyboard.
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const lift = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--kb', (kb > 60 ? kb : 0) + 'px');
+    };
+    vv.addEventListener('resize', lift); vv.addEventListener('scroll', lift);
+  }
   toMenu();
 })();
