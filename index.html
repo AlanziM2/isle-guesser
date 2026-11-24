@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isle Guesser</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,500..700,100&family=DM+Sans:opsz,wght@9..40,400..700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="map"></div>
+
+<header class="top">
+  <a id="home" class="logo" href="./" title="Back to the start">
+    <span class="logo-badge" aria-hidden="true">
+      <svg width="44" height="44" aria-hidden="true" viewBox="0 0 44 44">
+  <defs>
+    <linearGradient id="lsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd8b8"/><stop offset=".65" stop-color="#fff1dc"/></linearGradient>
+    <clipPath id="lc"><circle cx="22" cy="22" r="20"/></clipPath>
+  </defs>
+  <circle cx="22" cy="22" r="20" fill="url(#lsky)"/>
+  <g clip-path="url(#lc)">
+    <circle cx="31" cy="13" r="4.2" fill="#ffc861" opacity=".9"/>
+    <g transform="translate(2 4)">
+      <path d="M-2 31.5c3-1.6 5.8-1.6 8.6 0s5.8 1.6 8.4 0 5.8-1.6 8.6 0 5.6 1.6 8.4 0 5.8-1.6 8.6 0V44H-2z" fill="#9fd0e6" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M6.5 31.3C9 25.8 31 25.8 33.5 31.3z" fill="#f2d49c" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M28.2 28.5c.2-5.2 1.2-9.6 3.4-12.8" stroke="#3b3247" stroke-width="3.3" fill="none" stroke-linecap="round"/>
+      <path d="M28.2 28.5c.2-5.2 1.2-9.6 3.4-12.8" stroke="#b9825a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <g fill="#8cc474" stroke="#3b3247" stroke-width="1.1" stroke-linejoin="round">
+        <path d="M31.6 15.7C29 12 24 12 21.8 15.3 24 16.6 28.5 16.7 31.6 15.7z"/>
+        <path d="M31.6 15.7C31.5 11.4 35 9 38.8 10.7 37.6 13.7 34.6 15.5 31.6 15.7z"/>
+        <path d="M31.6 15.7C35 14.1 38.8 16 39.2 20.2 36 19.8 33.3 18 31.6 15.7z"/>
+        <path d="M31.6 15.7C28.9 16.6 26.7 19.1 26.5 22.6 29 21.6 30.9 19 31.6 15.7z"/>
+      </g>
+      <circle cx="30.6" cy="16.9" r="1.1" fill="#8a5a3a" stroke="#3b3247" stroke-width=".8"/><circle cx="32.6" cy="17.1" r="1.1" fill="#8a5a3a" stroke="#3b3247" stroke-width=".8"/>
+      <path d="M12 27.6v-6.4h10.4v6.4" fill="#f6d2a6" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M10.2 21.9L17.2 15.6l7 6.3z" fill="#d9674e" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+      <rect x="14.2" y="23.4" width="2.8" height="4.2" rx="1.2" fill="#8a5a3a" stroke="#3b3247" stroke-width="1"/>
+      <rect x="18.5" y="23" width="2.6" height="2.4" rx=".5" fill="#ffd36b" stroke="#3b3247" stroke-width="1"/>
+    </g>
+  </g>
+  <circle cx="22" cy="22" r="20" fill="none" stroke="#3b3247" stroke-width="1.6"/>
+</svg>
+    </span>
+    <span class="wordmark">Isle Guesser</span>
+  </a>
+  <div class="hud" id="hud" hidden>
+    <span class="pill" id="score-pill"><small>Score</small><b id="score">0</b></span>
+    <span class="pill streak" id="streak-pill" hidden><svg class="ico" viewBox="0 0 24 24"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-8.5z" fill="#ff8f6b" stroke="#c2410c" stroke-width="1.6" stroke-linejoin="round"/></svg><b id="streak">0</b></span>
+    <span class="pill clock" id="clock-pill"><small>Time</small><b id="clock">0:00</b></span>
+  </div>
+  <div class="top-actions">
+    <button id="history" class="round-btn" type="button" aria-label="Past runs" title="Past runs">
+      <svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg>
+    </button>
+    <button id="restart" class="round-btn" type="button" aria-label="Shuffle and restart" title="Shuffle &amp; restart">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></svg>
+    </button>
+    <button id="mute" class="round-btn" type="button" aria-label="Mute sound">
+      <svg viewBox="0 0 24 24" id="ico-on"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <svg viewBox="0 0 24 24" id="ico-off" hidden><path d="M11 5 6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="map-ctrls">
+  <button id="zin" class="round-btn" type="button" aria-label="Zoom in">+</button>
+  <button id="zout" class="round-btn" type="button" aria-label="Zoom out">−</button>
+  <button id="ztarget" class="round-btn" type="button" aria-label="Fly to the island" title="Fly to the island"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+</div>
+<button id="autozoom" class="float-chip" type="button" hidden><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>Fly to island</button>
+<p id="map-tip" class="map-tip" hidden>Scroll, pinch or drag the map to explore</p>
+
+<main class="dock">
+  <!-- menu -->
+  <section id="menu" class="card">
+    <h1>Spot the island. Name it.</h1>
+    <p class="lede">A flag, a glowing pin and a camera drifting down from orbit. Every island nation and self-governing island, from Fiji to the Faroes.</p>
+    <div class="pool" role="radiogroup" aria-label="Island set">
+      <button class="tab on" data-pool="all" type="button">All islands <small id="n-all"></small></button>
+      <button class="tab" data-pool="nation" type="button">Nations <small id="n-nation"></small></button>
+      <button class="tab" data-pool="territory" type="button">Territories <small id="n-territory"></small></button>
+    </div>
+    <div class="modes">
+      <button class="mode classic" data-mode="classic" type="button">
+        <span class="mode-ico"><svg viewBox="0 0 48 48" width="44" height="44"><circle cx="24" cy="24" r="19" fill="#fff" stroke="#3b3247" stroke-width="2.5"/><circle cx="24" cy="24" r="14" fill="none" stroke="#eadfca" stroke-width="2"/><path d="M24 11l5 13h-10z" fill="#d9634a"/><path d="M24 37l-5-13h10z" fill="#9fb7c9"/><circle cx="24" cy="24" r="2.5" fill="#3b3247"/></svg></span>
+        <span><b>Classic</b><em>Take your time. Points and streak bonuses.</em></span>
+      </button>
+      <button class="mode timed" data-mode="timed" type="button">
+        <span class="mode-ico"><svg viewBox="0 0 48 48" width="44" height="44"><rect x="20" y="3" width="8" height="5" rx="2" fill="#3b3247"/><circle cx="24" cy="27" r="17" fill="#fff" stroke="#3b3247" stroke-width="2.5"/><path d="M24 27V16" stroke="#7b5fd1" stroke-width="3" stroke-linecap="round"/><path d="M24 27l7 5" stroke="#3b3247" stroke-width="2.5" stroke-linecap="round"/><path d="M24 12a15 15 0 0 1 15 15H24z" fill="#c9b8ff" opacity=".55"/><circle cx="24" cy="27" r="2.5" fill="#3b3247"/></svg></span>
+        <span><b>Time Attack</b><em>Name them all as fast as you can.</em><strong id="best"></strong></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ask -->
+  <section id="ask" class="card" hidden>
+    <div class="progress" aria-label="Progress">
+      <span class="prog-count"><b id="count">0</b> of <span id="total">0</span></span>
+      <div class="prog-track" title="Green: named. Coral: skipped."><i id="bar-ok"></i><i id="bar-skip"></i></div>
+      <svg class="ico big" aria-hidden="true" viewBox="0 0 40 40">
+  <path d="M3 31.5c3-1.6 5.8-1.6 8.6 0s5.8 1.6 8.4 0 5.8-1.6 8.6 0 5.6 1.6 8.4 0v3.8a1.7 1.7 0 0 1-1.7 1.7H4.7A1.7 1.7 0 0 1 3 35.3z" fill="#9fd0e6" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M6.5 31.3C9 25.8 31 25.8 33.5 31.3z" fill="#f2d49c" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M28.2 28.5c.2-5.2 1.2-9.6 3.4-12.8" stroke="#3b3247" stroke-width="3.3" fill="none" stroke-linecap="round"/>
+  <path d="M28.2 28.5c.2-5.2 1.2-9.6 3.4-12.8" stroke="#b9825a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <g fill="#8cc474" stroke="#3b3247" stroke-width="1.1" stroke-linejoin="round">
+    <path d="M31.6 15.7C29 12 24 12 21.8 15.3 24 16.6 28.5 16.7 31.6 15.7z"/>
+    <path d="M31.6 15.7C31.5 11.4 35 9 38.8 10.7 37.6 13.7 34.6 15.5 31.6 15.7z"/>
+    <path d="M31.6 15.7C35 14.1 38.8 16 39.2 20.2 36 19.8 33.3 18 31.6 15.7z"/>
+    <path d="M31.6 15.7C28.9 16.6 26.7 19.1 26.5 22.6 29 21.6 30.9 19 31.6 15.7z"/>
+  </g>
+  <circle cx="30.6" cy="16.9" r="1.1" fill="#8a5a3a" stroke="#3b3247" stroke-width=".8"/><circle cx="32.6" cy="17.1" r="1.1" fill="#8a5a3a" stroke="#3b3247" stroke-width=".8"/>
+  <path d="M12 27.6v-6.4h10.4v6.4" fill="#f6d2a6" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M10.2 21.9L17.2 15.6l7 6.3z" fill="#d9674e" stroke="#3b3247" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M13.2 20.4l4-3.6 4 3.6" fill="none" stroke="#f08d6f" stroke-width="1" stroke-linecap="round"/>
+  <rect x="14.2" y="23.4" width="2.8" height="4.2" rx="1.2" fill="#8a5a3a" stroke="#3b3247" stroke-width="1"/>
+  <rect x="18.5" y="23" width="2.6" height="2.4" rx=".5" fill="#ffd36b" stroke="#3b3247" stroke-width="1"/>
+  <path d="M7 34.5c1.2-.6 2.4-.6 3.6 0M24 35c1.2-.6 2.4-.6 3.6 0" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+</svg></div>
+    <div class="ask-body">
+      <button class="flag-card" id="flag-btn" type="button" title="View flag larger"><img id="flag" alt="Flag of the mystery island"><span class="lens" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5M10.5 8v5"/></svg></span></button>
+      <div class="ask-main">
+        <p class="prompt">Which island flies this flag?</p>
+        <form id="answer-form" class="answer" autocomplete="off">
+          <input id="answer" type="text" maxlength="48" placeholder="Type an island…" aria-label="Your answer" spellcheck="false" autocapitalize="off">
+          <button class="btn" type="submit">Guess</button>
+        </form>
+        <ul id="clues" class="clues" aria-live="polite"></ul>
+        <div class="ask-foot">
+          <p id="hint" class="hint" aria-live="polite"></p>
+          <div class="foot-btns">
+            <button id="hint-btn" class="btn ghost" type="button" title="Costs your streak">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="#ffe7a3" stroke="#3b3247" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>Hint
+            </button>
+            <button id="skip" class="btn ghost" type="button">Skip</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- reveal -->
+  <section id="reveal" class="card" hidden>
+    <div class="reveal-row">
+      <button class="flag-card small" id="reveal-flag-btn" type="button" title="View flag larger"><img id="reveal-flag" alt=""><span class="lens" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5M10.5 8v5"/></svg></span></button>
+      <div class="verdict">
+        <p id="verdict" class="tier"></p>
+        <h2 id="reveal-name"></h2>
+        <p id="reveal-meta" class="meta"></p>
+        <p id="fixed" class="fixed" hidden></p>
+      </div>
+      <p id="gain" class="gain" hidden></p>
+    </div>
+    <div class="fact"><b>Did you know?</b> <span id="reveal-fact"></span></div>
+    <div class="row end"><span class="enter-hint">Press Enter</span><button id="next" class="btn" type="button">Next island</button></div>
+  </section>
+
+  <!-- end -->
+  <section id="end" class="card" hidden>
+    <p class="eyebrow" id="end-tag"></p>
+    <h1 id="end-title"></h1>
+    <div class="tiles" id="end-tiles"></div>
+    <p id="end-text" class="lede"></p>
+    <div class="row">
+      <button id="again" class="btn" type="button">Play again (shuffled)</button>
+      <button id="to-menu" class="btn ghost" type="button">Change mode</button>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast"></div>
+<div id="history-box" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="hist-title">
+  <div class="modal-card">
+    <button id="hist-close" class="round-btn modal-x" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h2 id="hist-title">Past runs</h2>
+    <div id="hist-summary" class="tiles"></div>
+    <div id="hist-list" class="hist-list"></div>
+    <div class="row end"><button id="hist-clear" class="btn ghost" type="button">Clear history</button></div>
+  </div>
+</div>
+<div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Flag, enlarged">
+  <figure>
+    <img id="lb-img" alt="">
+    <figcaption id="lb-cap"></figcaption>
+  </figure>
+  <p class="lb-close">Click anywhere or press Esc to close</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="match.js"></script>
+<script src="islands.js"></script>
+<script src="clues.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
